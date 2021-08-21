@@ -15,5 +15,11 @@ const project = new AwsCdkConstructLibrary({
   // packageName: undefined,            /* The "name" in package.json. */
   // projectType: ProjectType.UNKNOWN,  /* Which type of project this is (library/app). */
   // release: undefined,                /* Add release management to this project. */
+  cdkDependencies:[
+    '@aws-cdk/core',
+    '@aws-cdk/aws-ec2',
+    '@aws-cdk/aws-ecs',
+    '@aws-cdk/aws-ecs-patterns',
+  ]
 });
 project.synth();

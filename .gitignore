@@ -102,3 +102,6 @@ dist
 
 # TernJS port file
 .tern-port
+source/cdk.out/*
+source/test/__snapshots__/*
+source/yarn.lock

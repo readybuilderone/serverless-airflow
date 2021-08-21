@@ -56,7 +56,17 @@
     "typescript": "^4.3.5"
   },
   "peerDependencies": {
+    "@aws-cdk/aws-ec2": "^1.95.2",
+    "@aws-cdk/aws-ecs": "^1.95.2",
+    "@aws-cdk/aws-ecs-patterns": "^1.95.2",
+    "@aws-cdk/core": "^1.95.2",
     "constructs": "^3.2.27"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-ec2": "^1.95.2",
+    "@aws-cdk/aws-ecs": "^1.95.2",
+    "@aws-cdk/aws-ecs-patterns": "^1.95.2",
+    "@aws-cdk/core": "^1.95.2"
   },
   "bundledDependencies": [],
   "keywords": [
