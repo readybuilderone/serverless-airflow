@@ -15,11 +15,16 @@ const project = new AwsCdkConstructLibrary({
   // packageName: undefined,            /* The "name" in package.json. */
   // projectType: ProjectType.UNKNOWN,  /* Which type of project this is (library/app). */
   // release: undefined,                /* Add release management to this project. */
-  cdkDependencies:[
+  cdkDependencies: [
     '@aws-cdk/core',
     '@aws-cdk/aws-ec2',
     '@aws-cdk/aws-ecs',
     '@aws-cdk/aws-ecs-patterns',
-  ]
+  ],
 });
+
+const common_exclude = ['cdk.out', 'cdk.context.json', 'images', 'yarn-error.log'];
+project.npmignore.exclude(...common_exclude);
+project.gitignore.exclude(...common_exclude);
+
 project.synth();

@@ -105,3 +105,4 @@ dist
 source/cdk.out/*
 source/test/__snapshots__/*
 source/yarn.lock
+source/API.md
