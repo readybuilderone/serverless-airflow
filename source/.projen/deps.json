@@ -95,12 +95,27 @@
       "type": "peer"
     },
     {
+      "name": "@aws-cdk/aws-ecr",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
       "name": "@aws-cdk/aws-ecs-patterns",
       "version": "^1.95.2",
       "type": "peer"
     },
     {
       "name": "@aws-cdk/aws-ecs",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
+      "name": "@aws-cdk/aws-iam",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
+      "name": "@aws-cdk/aws-s3",
       "version": "^1.95.2",
       "type": "peer"
     },
@@ -120,12 +135,27 @@
       "type": "runtime"
     },
     {
+      "name": "@aws-cdk/aws-ecr",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-cdk/aws-ecs-patterns",
       "version": "^1.95.2",
       "type": "runtime"
     },
     {
       "name": "@aws-cdk/aws-ecs",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-cdk/aws-iam",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-cdk/aws-s3",
       "version": "^1.95.2",
       "type": "runtime"
     },

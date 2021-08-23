@@ -249,9 +249,9 @@
     constructs "^3.3.69"
     minimatch "^3.0.4"
 
-"@aws-cdk/aws-ecr@1.119.0":
+"@aws-cdk/aws-ecr@1.119.0", "@aws-cdk/aws-ecr@^1.95.2":
   version "1.119.0"
-  resolved "https://registry.npmjs.org/@aws-cdk/aws-ecr/-/aws-ecr-1.119.0.tgz"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-ecr/-/aws-ecr-1.119.0.tgz#e8b8ff7df39e33b4b6510b0e4e2b9169874ddd00"
   integrity sha512-H3bWAThlaaxk2Q4YYPxN3uzOkEgFD5g2o334OBCdqQdByRUH6tzUCekwsBoiwPe4DnuwXWz3A3ZwgkiA84w1SA==
   dependencies:
     "@aws-cdk/aws-events" "1.119.0"
@@ -395,7 +395,7 @@
     "@aws-cdk/custom-resources" "1.119.0"
     constructs "^3.3.69"
 
-"@aws-cdk/aws-iam@1.119.0":
+"@aws-cdk/aws-iam@1.119.0", "@aws-cdk/aws-iam@^1.95.2":
   version "1.119.0"
   resolved "https://registry.npmjs.org/@aws-cdk/aws-iam/-/aws-iam-1.119.0.tgz"
   integrity sha512-PsLOeuPlpwLCmiaW2R23/d8jOJD24GVIkh71rShPZEa4mr1qawoSbR1oNRC9n1Z/MX1YnDL/XOC8T5xMD8r54A==
@@ -525,7 +525,7 @@
     "@aws-cdk/cx-api" "1.119.0"
     constructs "^3.3.69"
 
-"@aws-cdk/aws-s3@1.119.0":
+"@aws-cdk/aws-s3@1.119.0", "@aws-cdk/aws-s3@^1.95.2":
   version "1.119.0"
   resolved "https://registry.npmjs.org/@aws-cdk/aws-s3/-/aws-s3-1.119.0.tgz"
   integrity sha512-L9SvOiIYlMjz9KyWOruoDb+k8CBSICc52SIN5Vnj+1AMX90w/5xO2/3fBGJYbMOkw5IPiCPs9VJbAgYy+akv8A==

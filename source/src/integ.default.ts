@@ -1,6 +1,5 @@
-import * as ec2 from '@aws-cdk/aws-ec2';
 import * as cdk from '@aws-cdk/core';
-import * as foo from './index';
+import * as airflow from './airflow';
 
 export class IntegTesting {
   readonly stack: cdk.Stack[];
@@ -11,16 +10,17 @@ export class IntegTesting {
       region: process.env.CDK_DEFAULT_REGION,
       account: process.env.CDK_DEFAULT_ACCOUNT,
     };
-    const stack = new cdk.Stack(app, 'foo-stack', {
+    const stack = new cdk.Stack(app, 'airflow-stack', {
       env,
     });
 
-    const vpc = ec2.Vpc.fromLookup(stack, 'Vpc', { isDefault: true });
+    // const vpc = ec2.Vpc.fromLookup(stack, 'Vpc', { isDefault: true });
+    const airflowStack = new airflow.Airflow(stack, 'Airflow');
 
-    const svc = new foo.Foo(stack, 'FooSvc', { vpc });
+    // const svc = new foo.Foo(stack, 'FooSvc', { vpc });
 
     new cdk.CfnOutput(stack, 'EndpointURL', {
-      value: svc.endpoint,
+      value: airflowStack.airflowWebserverEcrRepo.repositoryName,
     });
     this.stack = [stack];
   };

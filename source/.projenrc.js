@@ -20,6 +20,9 @@ const project = new AwsCdkConstructLibrary({
     '@aws-cdk/aws-ec2',
     '@aws-cdk/aws-ecs',
     '@aws-cdk/aws-ecs-patterns',
+    '@aws-cdk/aws-iam',
+    '@aws-cdk/aws-ecr',
+    '@aws-cdk/aws-s3',
   ],
 });
 
