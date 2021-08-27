@@ -106,3 +106,7 @@ source/cdk.out/*
 source/test/__snapshots__/*
 source/yarn.lock
 source/API.md
+source/.DS_Store
+.DS_Store
+source/package-lock.json
+source/.npmignore

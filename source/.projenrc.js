@@ -21,8 +21,13 @@ const project = new AwsCdkConstructLibrary({
     '@aws-cdk/aws-ecs',
     '@aws-cdk/aws-ecs-patterns',
     '@aws-cdk/aws-iam',
-    '@aws-cdk/aws-ecr',
     '@aws-cdk/aws-s3',
+    '@aws-cdk/aws-secretsmanager',
+    '@aws-cdk/aws-rds',
+    '@aws-cdk/aws-elasticache',
+    '@aws-cdk/aws-servicediscovery',
+    '@aws-cdk/aws-ecr-assets',
+    '@aws-cdk/aws-ecr',
   ],
 });
 

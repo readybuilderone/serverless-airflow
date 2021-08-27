@@ -95,6 +95,11 @@
       "type": "peer"
     },
     {
+      "name": "@aws-cdk/aws-ecr-assets",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
       "name": "@aws-cdk/aws-ecr",
       "version": "^1.95.2",
       "type": "peer"
@@ -110,12 +115,32 @@
       "type": "peer"
     },
     {
+      "name": "@aws-cdk/aws-elasticache",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
       "name": "@aws-cdk/aws-iam",
       "version": "^1.95.2",
       "type": "peer"
     },
     {
+      "name": "@aws-cdk/aws-rds",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
       "name": "@aws-cdk/aws-s3",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
+      "name": "@aws-cdk/aws-secretsmanager",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
+      "name": "@aws-cdk/aws-servicediscovery",
       "version": "^1.95.2",
       "type": "peer"
     },
@@ -135,6 +160,11 @@
       "type": "runtime"
     },
     {
+      "name": "@aws-cdk/aws-ecr-assets",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-cdk/aws-ecr",
       "version": "^1.95.2",
       "type": "runtime"
@@ -150,12 +180,32 @@
       "type": "runtime"
     },
     {
+      "name": "@aws-cdk/aws-elasticache",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-cdk/aws-iam",
       "version": "^1.95.2",
       "type": "runtime"
     },
     {
+      "name": "@aws-cdk/aws-rds",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
       "name": "@aws-cdk/aws-s3",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-cdk/aws-secretsmanager",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-cdk/aws-servicediscovery",
       "version": "^1.95.2",
       "type": "runtime"
     },
