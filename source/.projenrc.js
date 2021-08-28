@@ -28,6 +28,7 @@ const project = new AwsCdkConstructLibrary({
     '@aws-cdk/aws-servicediscovery',
     '@aws-cdk/aws-ecr-assets',
     '@aws-cdk/aws-ecr',
+    '@aws-cdk/aws-events',
   ],
 });
 

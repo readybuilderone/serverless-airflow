@@ -110,3 +110,4 @@ source/.DS_Store
 .DS_Store
 source/package-lock.json
 source/.npmignore
+source/yarn.lock
