@@ -1,35 +1,23 @@
-import * as ecr from '@aws-cdk/aws-ecr';
+// import * as path from 'path';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as cdk from '@aws-cdk/core';
+import * as ecs from '@aws-cdk/aws-ecs';
+// import * as assets from '@aws-cdk/aws-ecr-assets';
 
 export interface AirflowProps{
   readonly bucketName?: string;
 }
 
 export class Airflow extends cdk.Construct {
-  readonly airflowWebserverEcrRepo: ecr.Repository;
-  readonly airflowSchedulerEcrRepo: ecr.Repository;
-  readonly airflowWorkerEcrRepo: ecr.Repository;
 
   constructor(scope: cdk.Construct, id:string, props: AirflowProps= {}) {
     super(scope, id);
 
-    //initialize ECR repository
-    this.airflowWebserverEcrRepo = new ecr.Repository(this, 'AirflowWebserverRepo', {
-      repositoryName: 'airflow-webserver-repo',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-    this.airflowSchedulerEcrRepo = new ecr.Repository(this, 'AirflowSchedulerRepo', {
-      repositoryName: 'airflow-scheduler-repo',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-    this.airflowWorkerEcrRepo = new ecr.Repository(this, 'AirflowWorkerRepo', {
-      repositoryName: 'airflow-worke-repo',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-    });
-
     const airflowBucket = this._getAirflowBucket(props);
     console.log(airflowBucket.bucketName);
+
+    this._getAirflowECSCluster(props);
+
   }
 
   /**
@@ -49,7 +37,27 @@ export class Airflow extends cdk.Construct {
         ignorePublicAcls: true,
         restrictPublicBuckets: true,
       }),
+      autoDeleteObjects: true,
     });
     return airflowBucket;
   }
+
+  /**
+   * Create the Ariflow ECS Cluster
+   * @param props 
+   * @returns 
+   */
+  private _getAirflowECSCluster(props: AirflowProps): ecs.Cluster {
+    console.log(props);
+    const airflowCluster = new ecs.Cluster(this, 'airflow-ecs-cluster', {
+
+    });
+    return airflowCluster;
+  }
+
+  // private _createAirflowWebService() {
+  //   new assets.DockerImageAsset(this, 'airflow-webserver', {
+  //     directory: path.join(__dirname, '/../docker-images/airflow-webserver'),
+  //   });
+  // }
 }

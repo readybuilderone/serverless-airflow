@@ -11,7 +11,4 @@ const stack = new cdk.Stack(app, 'airflow-stack', {
 });
 // const vpc = ec2.Vpc.fromLookup(stack, 'Vpc', { isDefault: true });
 const airflowStack = new airflow.Airflow(stack, 'Airflow');
-// const svc = new foo.Foo(stack, 'FooSvc', { vpc });
-new cdk.CfnOutput(stack, 'EndpointURL', {
-  value: airflowStack.airflowWebserverEcrRepo.repositoryName,
-});
+console.log(airflowStack);
