@@ -28,6 +28,17 @@ export class Airflow extends cdk.Construct {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    const airflowBucket = this._getAirflowBucket(props);
+    console.log(airflowBucket.bucketName);
+  }
+
+  /**
+   * Create a S3 bucket for airflow to synch the DAG.
+   * If the bucket name is provided in the props, it will use
+   * @param props
+   * @returns
+   */
+  private _getAirflowBucket(props: AirflowProps): s3.IBucket {
     const bucketName = props.bucketName ?? `airflow-bucket-${Math.floor(Math.random() * 1000001)}`;
     const airflowBucket = new s3.Bucket(this, 'AirflowBucket', {
       bucketName,
@@ -39,7 +50,6 @@ export class Airflow extends cdk.Construct {
         restrictPublicBuckets: true,
       }),
     });
-
-    console.log(airflowBucket.bucketName);
+    return airflowBucket;
   }
 }
