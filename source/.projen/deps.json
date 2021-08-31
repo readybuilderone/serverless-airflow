@@ -130,6 +130,11 @@
       "type": "peer"
     },
     {
+      "name": "@aws-cdk/aws-logs",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
       "name": "@aws-cdk/aws-rds",
       "version": "^1.95.2",
       "type": "peer"
@@ -196,6 +201,11 @@
     },
     {
       "name": "@aws-cdk/aws-iam",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-cdk/aws-logs",
       "version": "^1.95.2",
       "type": "runtime"
     },

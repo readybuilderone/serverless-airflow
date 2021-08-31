@@ -477,7 +477,7 @@
     "@aws-cdk/region-info" "1.120.0"
     constructs "^3.3.69"
 
-"@aws-cdk/aws-logs@1.120.0":
+"@aws-cdk/aws-logs@1.120.0", "@aws-cdk/aws-logs@^1.95.2":
   version "1.120.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-logs/-/aws-logs-1.120.0.tgz#857d40850eafa3583f49790c0c1fc66af882a140"
   integrity sha512-kUiPmEt4CIq9TsAW0wdwna8os8BQrdCoqqO9J26PpsB5rL/MNlVCYpf6rDBwujEWD/p+8tPgVwWVsz6j73RXyw==
