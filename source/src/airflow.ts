@@ -22,20 +22,70 @@ export interface AirflowProps {
 }
 
 export class Airflow extends cdk.Construct {
+  private readonly airflowECSServiceSG: ec2.ISecurityGroup;
+  private readonly airflowAlbSG: ec2.ISecurityGroup;
+  private readonly vpcendpointSG: ec2.ISecurityGroup;
+  private readonly redisSG: ec2.ISecurityGroup;
+  private readonly databaseSG: ec2.ISecurityGroup;
+  
 
   constructor(scope: cdk.Construct, id: string, props: AirflowProps = {}) {
     super(scope, id);
 
+    //Create Bucket
     const airflowBucket = this._getAirflowBucket(props);
 
+    //Create VPC
     const vpc = this._getAirflowVPC(props);
 
+    //Initial Security Group Property
+    this.airflowECSServiceSG = new ec2.SecurityGroup(this, 'airflow-ecsservice-sg', {
+      vpc,
+      allowAllOutbound: true,
+      securityGroupName: 'airflow-ecsservice-sg',
+    });
+    this.airflowECSServiceSG.connections.allowFromAnyIpv4(ec2.Port.allTcp());
+    
+    this.airflowAlbSG = new ec2.SecurityGroup(this, 'airflow-alb-sg', {
+      vpc,
+      allowAllOutbound: true,
+      securityGroupName: 'airflow-alb-sg',
+    });
+    this.airflowECSServiceSG.connections.allowFrom(this.airflowAlbSG, ec2.Port.tcp(8080));
+    this.airflowECSServiceSG.connections.allowFrom(this.airflowAlbSG, ec2.Port.tcp(80));
+
+    this.vpcendpointSG = new ec2.SecurityGroup(this, 'vpcendpoint-sg', {
+      vpc,
+      securityGroupName: 'vpcendpoint-sg',
+    });
+    this.vpcendpointSG.connections.allowFrom(ec2.Peer.ipv4('10.0.0.0/16'), ec2.Port.tcp(443), 'vpc endpoint security group');
+    this.vpcendpointSG.connections.allowFrom(ec2.Peer.anyIpv4(), ec2.Port.tcpRange(0, 65535), 'vpc endpoint sg 2');
+    
+    this.redisSG = new ec2.SecurityGroup(this, 'airflow-redis-sg', {
+      vpc,
+      allowAllOutbound: true,
+    });
+    this.redisSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(6379), 'Redis SG');
+
+    this.databaseSG = new ec2.SecurityGroup(this, 'airflow-database-sg', {
+      vpc,
+      allowAllOutbound: true,
+    });
+    this.databaseSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(5432), 'Database SG');
+
+
+    //Create VPC Endpoints
+    this._createVPCEndpoints(vpc);
+
+    //Create Database
     const airflowDBSecret = this._getAirflowDBSecret();
     const dbName = props.dbName ?? 'airflowdb';
     const airflowDB = this._getAirflowDB(vpc, airflowDBSecret, dbName);
 
+    //Create Redis
     const airflowRedis = this._getAirflowRedis(props, vpc);
 
+    //Create AirflowCluster
     this._getAirflowECSCluster(props, vpc, airflowBucket, airflowDBSecret, airflowDB, dbName, airflowRedis);
 
   }
@@ -102,11 +152,16 @@ export class Airflow extends cdk.Construct {
       cdk.Tags.of(subnet).add('Name', `isolated-subnet-${subnet.availabilityZone}-airflow`);
     });
 
-    this._createVPCEndpoints(airflowVPC);
+    
     return airflowVPC;
   }
 
+  /**
+   * Create VPC Endpoints
+   * @param vpc
+   */
   private _createVPCEndpoints(vpc: ec2.IVpc) {
+    //Create S3 Gateway VPC Endpoints
     vpc.addGatewayEndpoint('s3-endpoint', {
       service: ec2.GatewayVpcEndpointAwsService.S3,
       subnets: [
@@ -114,41 +169,31 @@ export class Airflow extends cdk.Construct {
       ],
     });
 
-    const vpcendpointSG = new ec2.SecurityGroup(this, 'vpcendpoint-sg', {
-      vpc,
-      securityGroupName: 'vpcendpoint-sg',
-    });
-    vpcendpointSG.connections.allowFrom(ec2.Peer.ipv4('10.0.0.0/16'), ec2.Port.tcp(443), 'vpc endpoint security group');
-    vpcendpointSG.connections.allowFrom(ec2.Peer.anyIpv4(), ec2.Port.tcpRange(0, 65535), 'vpc endpoint sg 2');
-
-    vpc.addInterfaceEndpoint('ecs-endpoint', {
-      service: ec2.InterfaceVpcEndpointAwsService.ECS,
-      privateDnsEnabled: true,
-      securityGroups: [vpcendpointSG],
-    });
-
-    vpc.addInterfaceEndpoint('cloudwatchlogs-endpoint', {
-      service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
-      privateDnsEnabled: true,
-      securityGroups: [vpcendpointSG],
-    });
-
-    vpc.addInterfaceEndpoint('secrets-manager-endpoint', {
-      service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
-      privateDnsEnabled: true,
-      securityGroups: [vpcendpointSG],
-    });
-
+    //Create Interface VPC Endpoints for ECR/ECS/CloudWatch/SecretsManager
     vpc.addInterfaceEndpoint('ecr-endpoint', {
       service: ec2.InterfaceVpcEndpointAwsService.ECR,
       privateDnsEnabled: true,
-      securityGroups: [vpcendpointSG],
+      securityGroups: [this.vpcendpointSG],
     });
-
     vpc.addInterfaceEndpoint('ecr-docker-endpoint', {
       service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
       privateDnsEnabled: true,
-      securityGroups: [vpcendpointSG],
+      securityGroups: [this.vpcendpointSG],
+    });
+    vpc.addInterfaceEndpoint('ecs-endpoint', {
+      service: ec2.InterfaceVpcEndpointAwsService.ECS,
+      privateDnsEnabled: true,
+      securityGroups: [this.vpcendpointSG],
+    });
+    vpc.addInterfaceEndpoint('cloudwatchlogs-endpoint', {
+      service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+      privateDnsEnabled: true,
+      securityGroups: [this.vpcendpointSG],
+    });
+    vpc.addInterfaceEndpoint('secrets-manager-endpoint', {
+      service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+      privateDnsEnabled: true,
+      securityGroups: [this.vpcendpointSG],
     });
   }
 
@@ -195,6 +240,7 @@ export class Airflow extends cdk.Construct {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       parameterGroup: rds.ParameterGroup.fromParameterGroupName(this, 'airflow-db-parametergroup', 'default.postgres9.6'),
       deletionProtection: false,
+      securityGroups: [this.databaseSG],
     });
     return dbInstance;
   }
@@ -211,10 +257,7 @@ export class Airflow extends cdk.Construct {
         description: 'Airflow Redis isolated subnet group',
         subnetIds: vpc.isolatedSubnets.map((subnet) => subnet.subnetId),
       }).ref,
-      vpcSecurityGroupIds: [new ec2.SecurityGroup(this, 'airflow-redis-sg', {
-        vpc,
-        allowAllOutbound: true,
-      }).securityGroupId],
+      vpcSecurityGroupIds: [this.redisSG.securityGroupId],
     });
     return redisCluster;
   }
@@ -226,106 +269,33 @@ export class Airflow extends cdk.Construct {
    */
   private _getAirflowECSCluster(props: AirflowProps, vpc: ec2.IVpc, bucket: s3.IBucket, databaseSceret: secretsmanager.Secret,
     database: rds.IDatabaseInstance, dbName: string, redis: elasticache.CfnCacheCluster): ecs.Cluster {
+    //Create ECS Cluster
     const clusterName = props.ecsclusterName ?? 'AirflowECSCluster';
     const airflowCluster = new ecs.Cluster(this, 'airflow-ecs-cluster', {
       vpc,
       clusterName,
       containerInsights: true,
     });
-
-    //Log Group
-    const webserverLogGroup = this._createAirflowLogGroup('airflow-webserver-lg', '/ecs/airflow-webserver');
-    const schedulerLogGroup = this._createAirflowLogGroup('airflow-scheduler-lg', '/ecs/airflow-scheduler');
-    const workerLogGroup = this._createAirflowLogGroup('airflow-worker-lg', '/ecs/airflow-worker');
-
-    //ECS Roles
+    //Create Roles
     const executionRole = this._createTaskExecutionRole();
     const taskRole = this._createTaskRole(bucket);
 
+    //Airflow ECS Service SG
+
+
+    //Create Log Group
+    const webserverLogGroup = this._createAirflowLogGroup('airflow-webserver-lg', '/ecs/airflow-webserver');
+    const schedulerLogGroup = this._createAirflowLogGroup('airflow-scheduler-lg', '/ecs/airflow-scheduler');
+    const workerLogGroup = this._createAirflowLogGroup('airflow-worker-lg', '/ecs/airflow-worker');
     webserverLogGroup.grantWrite(taskRole);
     schedulerLogGroup.grantWrite(taskRole);
     workerLogGroup.grantWrite(taskRole);
 
-    //FernetKey
-    const fernetKey = props.airflowFernetKey ?? 'gjDz-PXGnhitGbAGkiPziGCGWie9Q-ai3c56FUmNsuY=';
-
-    //Tasks
-    const webserverTask = new ecs.FargateTaskDefinition(this, 'AriflowWebserverTask', {
-      executionRole,
-      taskRole,
-      cpu: 512,
-      memoryLimitMiB: 1024,
-      family: 'airflow-webserver',
-    });
-    webserverTask.addContainer('airflow-webserver-container', {
-      image: ecs.AssetImage.fromDockerImageAsset(this._createECSSampleDockerImage()),
-      // image: ecs.AssetImage.fromDockerImageAsset(this._createAirflowWebServiceDockerImage()),
-      logging: new ecs.AwsLogDriver({
-        streamPrefix: 'ecs',
-        logGroup: webserverLogGroup,
-      }),
-      environment: {
-        AIRFLOW_FERNET_KEY: fernetKey,
-        AIRFLOW_DATABASE_NAME: dbName,
-        AIRFLOW_DATABASE_PORT_NUMBER: '5432',
-        AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
-        AIRFLOW_EXECUTOR: 'CeleryExecutor',
-        AIRFLOW_WEBSERVER_HOST: 'webserver.airflow',
-        AIRFLOW_LOAD_EXAMPLES: 'no',
-        AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '30',
-        REDIS_HOST: redis.attrRedisEndpointAddress,
-        BUCKET_NAME: bucket.bucketName,
-      },
-      secrets: {
-        AIRFLOW_DATABASE_USERNAME: ecs.Secret.fromSecretsManager(databaseSceret, 'username'),
-        AIRFLOW_DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(databaseSceret, 'password'),
-      },
-      portMappings: [{ containerPort: 80 }],
-      // portMappings: [{
-      //   containerPort: 8080,
-      //   hostPort: 8080,
-      //   protocol: ecs.Protocol.TCP,
-      // }],
-    });
-
-    //AirflowWebServerService SG
-    const airflowECSServiceSG = new ec2.SecurityGroup(this, 'airflow-ecsservice-sg', {
-      vpc,
-      allowAllOutbound: true,
-      securityGroupName: 'airflow-ecsservice-sg',
-    });
-    airflowECSServiceSG.connections.allowFromAnyIpv4(ec2.Port.allTcp());
-    //AirflowWebServerService
-    const airflowWebserverService = new ecs.FargateService(this, 'AirflowWebserverService', {
-      cluster: airflowCluster,
-      taskDefinition: webserverTask,
-      serviceName: 'AirflowWebserverServiceName',
-      securityGroups: [airflowECSServiceSG],
-    });
-
-    //ALB
-    const airflowAlbSG = new ec2.SecurityGroup(this, 'airflow-alb-sg', {
-      vpc,
-      allowAllOutbound: true,
-      securityGroupName: 'airflow-alb-sg',
-    });
-    airflowECSServiceSG.connections.allowFrom(airflowAlbSG, ec2.Port.tcp(8080));
-    airflowECSServiceSG.connections.allowFrom(airflowAlbSG, ec2.Port.tcp(80));
-
-    const alb = new elbv2.ApplicationLoadBalancer(this, 'LB', {
-      vpc,
-      internetFacing: true,
-      securityGroup: airflowAlbSG,
-      loadBalancerName: 'Airflow-Webserver-Loadbalancer',
-    });
-    const listener = alb.addListener('PublicListener', {
-      port: 80,
-      open: true,
-    });
-    listener.addTargets('Fargate', {
-      port: 80,
-      targets: [airflowWebserverService],
-    });
+    //Create Airflow ECS Service
+    this._createAirflowWebserverService(props, executionRole, taskRole, webserverLogGroup, bucket, databaseSceret, database,
+      dbName, redis, vpc, airflowCluster);
+    this._createAirflowSchedulerService();
+    this._createAirflowWorkerService();
 
     return airflowCluster;
   }
@@ -377,14 +347,104 @@ export class Airflow extends cdk.Construct {
     return taskRole;
   }
 
-  // private _createAirflowWebServiceDockerImage(): assets.DockerImageAsset {
-  //   return new assets.DockerImageAsset(this, 'airflow-webserver', {
-  //     directory: path.join(__dirname, '/../docker-images/airflow-webserver'),
+  /**
+   * Create Airflow Webserver ECS Service
+   */
+  private _createAirflowWebserverService(props: AirflowProps, executionRole: iam.IRole, taskRole: iam.IRole, webserverLogGroup: logs.ILogGroup,
+    bucket: s3.IBucket, databaseSceret: secretsmanager.Secret, database: rds.IDatabaseInstance, dbName: string, redis: elasticache.CfnCacheCluster,
+    vpc: ec2.IVpc, airflowCluster: ecs.ICluster) {
+
+    //Create Task Definition
+    const fernetKey = props.airflowFernetKey ?? 'gjDz-PXGnhitGbAGkiPziGCGWie9Q-ai3c56FUmNsuY='; //TODO: Update fernetKey
+    const webserverTask = new ecs.FargateTaskDefinition(this, 'AriflowWebserverTask', {
+      executionRole,
+      taskRole,
+      cpu: 512,
+      memoryLimitMiB: 1024,
+      family: 'airflow-webserver',
+    });
+    webserverTask.addContainer('airflow-webserver-container', {
+      // image: ecs.AssetImage.fromDockerImageAsset(this._createECSSampleDockerImage()),
+      image: ecs.AssetImage.fromDockerImageAsset(this._createAirflowWebServiceDockerImage()),
+      logging: new ecs.AwsLogDriver({
+        streamPrefix: 'ecs',
+        logGroup: webserverLogGroup,
+      }),
+      environment: {
+        AIRFLOW_FERNET_KEY: fernetKey,
+        AIRFLOW_DATABASE_NAME: dbName,
+        AIRFLOW_DATABASE_PORT_NUMBER: '5432',
+        AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
+        AIRFLOW_EXECUTOR: 'CeleryExecutor',
+        AIRFLOW_WEBSERVER_HOST: 'webserver.airflow',
+        AIRFLOW_LOAD_EXAMPLES: 'no',
+        AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '30',
+        REDIS_HOST: redis.attrRedisEndpointAddress,
+        BUCKET_NAME: bucket.bucketName,
+      },
+      secrets: {
+        AIRFLOW_DATABASE_USERNAME: ecs.Secret.fromSecretsManager(databaseSceret, 'username'),
+        AIRFLOW_DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(databaseSceret, 'password'),
+      },
+      portMappings: [{ containerPort: 8080 }], //Change to 8080
+    });
+
+    //Create AirflowWebServerService
+    const airflowWebserverService = new ecs.FargateService(this, 'AirflowWebserverService', {
+      cluster: airflowCluster,
+      taskDefinition: webserverTask,
+      serviceName: 'AirflowWebserverServiceName',
+      securityGroups: [this.airflowECSServiceSG],
+    });
+
+    //Create Airflow ALB
+    
+    const alb = new elbv2.ApplicationLoadBalancer(this, 'LB', {
+      vpc,
+      internetFacing: true,
+      securityGroup: this.airflowAlbSG,
+      loadBalancerName: 'Airflow-Webserver-Loadbalancer',
+    });
+    const listener = alb.addListener('PublicListener', {
+      port: 80,
+      open: true,
+    });
+    listener.addTargets('Fargate', {
+      port: 80,
+      targets: [airflowWebserverService],
+      healthCheck: {
+        enabled: true,
+        path: '/health',
+        interval: cdk.Duration.seconds(60),
+        timeout: cdk.Duration.seconds(5),
+      },
+
+    });
+  }
+
+  private _createAirflowWebServiceDockerImage(): assets.DockerImageAsset {
+    return new assets.DockerImageAsset(this, 'airflow-webserver', {
+      directory: path.join(__dirname, '/../docker-images/airflow-webserver'),
+    });
+  }
+
+  // private _createECSSampleDockerImage(): assets.DockerImageAsset {
+  //   return new assets.DockerImageAsset(this, 'ecslocal-sample', {
+  //     directory: path.join(__dirname, '/../docker-images/ecs-sample'),
   //   });
   // }
-  private _createECSSampleDockerImage(): assets.DockerImageAsset {
-    return new assets.DockerImageAsset(this, 'ecslocal-sample', {
-      directory: path.join(__dirname, '/../docker-images/ecs-sample'),
-    });
+
+  /**
+   * Create Airflow Scheduler ECS Service
+   */
+  private _createAirflowSchedulerService() {
+
+  }
+
+  /**
+   *  Create Airflow Worker ECS Service
+   */
+  private _createAirflowWorkerService() {
+
   }
 }
