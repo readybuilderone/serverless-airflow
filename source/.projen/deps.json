@@ -120,6 +120,11 @@
       "type": "peer"
     },
     {
+      "name": "@aws-cdk/aws-elasticloadbalancingv2",
+      "version": "^1.95.2",
+      "type": "peer"
+    },
+    {
       "name": "@aws-cdk/aws-events",
       "version": "^1.95.2",
       "type": "peer"
@@ -191,6 +196,11 @@
     },
     {
       "name": "@aws-cdk/aws-elasticache",
+      "version": "^1.95.2",
+      "type": "runtime"
+    },
+    {
+      "name": "@aws-cdk/aws-elasticloadbalancingv2",
       "version": "^1.95.2",
       "type": "runtime"
     },
