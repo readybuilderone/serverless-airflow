@@ -32,6 +32,7 @@ const project = new AwsCdkConstructLibrary({
     '@aws-cdk/aws-logs',
     '@aws-cdk/aws-elasticloadbalancingv2',
     '@aws-cdk/aws-ecs-patterns',
+    '@aws-cdk/aws-servicediscovery',
   ],
 });
 

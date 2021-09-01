@@ -5,13 +5,13 @@ import * as ecs from '@aws-cdk/aws-ecs';
 import * as elasticache from '@aws-cdk/aws-elasticache';
 // import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
 import * as iam from '@aws-cdk/aws-iam';
-import { PolicyStatement } from '@aws-cdk/aws-iam';
 import * as logs from '@aws-cdk/aws-logs';
 import * as rds from '@aws-cdk/aws-rds';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as cdk from '@aws-cdk/core';
 import * as patterns from '@aws-cdk/aws-ecs-patterns';
+import * as servicediscovery from '@aws-cdk/aws-servicediscovery';
 
 export interface AirflowProps {
   readonly bucketName?: string;
@@ -207,7 +207,6 @@ export class Airflow extends cdk.Construct {
         passwordLength: 16,
         excludeCharacters: '\"@/',
         excludePunctuation: true,
-
       },
     });
     return databaseSceret;
@@ -293,11 +292,12 @@ export class Airflow extends cdk.Construct {
     workerLogGroup.grantWrite(taskRole);
 
     //Create Airflow ECS Service
-    this._createAirflowWebserverService(props, executionRole, taskRole, bucket, databaseSceret, database,
+    const fernetKey = props.airflowFernetKey ?? 'gjDz-PXGnhitGbAGkiPziGCGWie9Q-ai3c56FUmNsuY='; //TODO: Update fernetKey
+    this._createAirflowWebserverService(fernetKey, executionRole, taskRole, bucket, databaseSceret, database,
+      dbName, airflowCluster, webserverLogGroup);
+    this._createAirflowSchedulerService(fernetKey, executionRole, taskRole, schedulerLogGroup, bucket, databaseSceret, database,
       dbName, redis, airflowCluster);
-    this._createAirflowSchedulerService(executionRole, taskRole, schedulerLogGroup, bucket, databaseSceret, database,
-      dbName, redis, airflowCluster);
-    this._createAirflowWorkerService(executionRole, taskRole, workerLogGroup, bucket, databaseSceret, database,
+    this._createAirflowWorkerService(fernetKey, executionRole, taskRole, workerLogGroup, bucket, databaseSceret, database,
       dbName, redis, airflowCluster);
 
     return airflowCluster;
@@ -330,7 +330,7 @@ export class Airflow extends cdk.Construct {
     });
     taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'));
     //S3 Policy
-    taskRole.addToPolicy(new PolicyStatement({
+    taskRole.addToPolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: [
         's3:ListBucket',
@@ -341,7 +341,7 @@ export class Airflow extends cdk.Construct {
     }));
 
     //Secrets Manager
-    taskRole.addToPolicy(new PolicyStatement({
+    taskRole.addToPolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: ['secretsmanager:GetSecretValue'],
       resources: ['*'],
@@ -353,11 +353,10 @@ export class Airflow extends cdk.Construct {
   /**
    * Create Airflow Webserver ECS Service
    */
-  private _createAirflowWebserverService(props: AirflowProps, executionRole: iam.IRole, taskRole: iam.IRole, 
-    bucket: s3.IBucket, databaseSceret: secretsmanager.Secret, database: rds.IDatabaseInstance, dbName: string, redis: elasticache.CfnCacheCluster,
-    airflowCluster: ecs.ICluster) {
+  private _createAirflowWebserverService(fernetKey: string, executionRole: iam.IRole, taskRole: iam.IRole, 
+    bucket: s3.IBucket, databaseSceret: secretsmanager.Secret, database: rds.IDatabaseInstance, dbName: string,
+    airflowCluster: ecs.ICluster, webserverLogGroup: logs.ILogGroup) {
 
-    const fernetKey = props.airflowFernetKey ?? 'gjDz-PXGnhitGbAGkiPziGCGWie9Q-ai3c56FUmNsuY='; //TODO: Update fernetKey
     const loadBalancedFargateService = new patterns.ApplicationLoadBalancedFargateService(this, 'airflow-webserver-pattners', {
       cluster: airflowCluster,
       cpu: 512,
@@ -373,10 +372,8 @@ export class Airflow extends cdk.Construct {
           AIRFLOW_DATABASE_PORT_NUMBER: '5432',
           AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
           AIRFLOW_EXECUTOR: 'CeleryExecutor',
-          AIRFLOW_WEBSERVER_HOST: 'webserver.airflow',
           AIRFLOW_LOAD_EXAMPLES: 'no',
           AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '30',
-          REDIS_HOST: redis.attrRedisEndpointAddress,
           BUCKET_NAME: bucket.bucketName,
         },
         secrets: {
@@ -384,18 +381,31 @@ export class Airflow extends cdk.Construct {
           AIRFLOW_DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(databaseSceret, 'password'),
         },
         containerPort: 8080,
+        logDriver: ecs.LogDriver.awsLogs({
+          streamPrefix: 'ecs',
+          logGroup: webserverLogGroup,
+        }),
       },
       securityGroups: [this.airflowECSServiceSG],
       serviceName: 'AirflowWebserverServiceName',
       desiredCount:1,
       loadBalancerName: 'Airflow-Webserver-LB',
-    })
+      cloudMapOptions: {
+        name: 'webserver',
+        dnsRecordType: servicediscovery.DnsRecordType.A,
+        dnsTtl: cdk.Duration.seconds(30),
+        cloudMapNamespace: new servicediscovery.PrivateDnsNamespace(this, 'webserver-dns-namespace', {
+          name: 'airflow',
+          vpc: airflowCluster.vpc,
+        })
+      }
+    });
 
     loadBalancedFargateService.targetGroup.configureHealthCheck({
       path: '/health',
       interval: cdk.Duration.seconds(60),
       timeout: cdk.Duration.seconds(20),
-    })
+    });
 
     // //Create Task Definition
     // const fernetKey = props.airflowFernetKey ?? 'gjDz-PXGnhitGbAGkiPziGCGWie9Q-ai3c56FUmNsuY='; //TODO: Update fernetKey
@@ -467,7 +477,7 @@ export class Airflow extends cdk.Construct {
   /**
    * Create Airflow Scheduler ECS Service
    */
-  private _createAirflowSchedulerService(executionRole: iam.IRole, taskRole: iam.IRole, schedulerLogGroup: logs.ILogGroup,
+  private _createAirflowSchedulerService(fernetKey: string, executionRole: iam.IRole, taskRole: iam.IRole, schedulerLogGroup: logs.ILogGroup,
     bucket: s3.IBucket, databaseSceret: secretsmanager.Secret, database: rds.IDatabaseInstance, dbName: string, redis: elasticache.CfnCacheCluster,
     airflowCluster: ecs.ICluster) {
     //Create Task Definition
@@ -485,6 +495,7 @@ export class Airflow extends cdk.Construct {
         logGroup: schedulerLogGroup,
       }),
       environment: {
+        AIRFLOW_FERNET_KEY: fernetKey,
         AIRFLOW_DATABASE_NAME: dbName,
         AIRFLOW_DATABASE_PORT_NUMBER: '5432',
         AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
@@ -513,7 +524,7 @@ export class Airflow extends cdk.Construct {
   /**
    *  Create Airflow Worker ECS Service
    */
-  private _createAirflowWorkerService(executionRole: iam.IRole, taskRole: iam.IRole, workerLogGroup: logs.ILogGroup,
+  private _createAirflowWorkerService(fernetKey: string, executionRole: iam.IRole, taskRole: iam.IRole, workerLogGroup: logs.ILogGroup,
     bucket: s3.IBucket, databaseSceret: secretsmanager.Secret, database: rds.IDatabaseInstance, dbName: string, redis: elasticache.CfnCacheCluster,
     airflowCluster: ecs.ICluster) {
     //Create Task Definition
@@ -531,6 +542,7 @@ export class Airflow extends cdk.Construct {
         logGroup: workerLogGroup,
       }),
       environment: {
+        AIRFLOW_FERNET_KEY: fernetKey,
         AIRFLOW_DATABASE_NAME: dbName,
         AIRFLOW_DATABASE_PORT_NUMBER: '5432',
         AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
