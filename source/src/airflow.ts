@@ -11,6 +11,7 @@ import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
 import * as cdk from '@aws-cdk/core';
 import * as patterns from '@aws-cdk/aws-ecs-patterns';
 import * as servicediscovery from '@aws-cdk/aws-servicediscovery';
+import { CfnOutput } from '@aws-cdk/core';
 
 export interface AirflowProps {
   readonly bucketName?: string;
@@ -107,6 +108,11 @@ export class Airflow extends cdk.Construct {
       }),
       autoDeleteObjects: true,
     });
+    new CfnOutput(this, 'airflow-bucket', {
+      value: airflowBucket.bucketName,
+      exportName: 'AirflowBucket',
+      description: 'Buckent Name'
+    })
     return airflowBucket;
   }
 
