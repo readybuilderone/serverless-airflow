@@ -3,7 +3,6 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as assets from '@aws-cdk/aws-ecr-assets';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as elasticache from '@aws-cdk/aws-elasticache';
-// import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
 import * as iam from '@aws-cdk/aws-iam';
 import * as logs from '@aws-cdk/aws-logs';
 import * as rds from '@aws-cdk/aws-rds';
@@ -28,7 +27,6 @@ export class Airflow extends cdk.Construct {
   private readonly vpcendpointSG: ec2.ISecurityGroup;
   private readonly redisSG: ec2.ISecurityGroup;
   private readonly databaseSG: ec2.ISecurityGroup;
-
 
   constructor(scope: cdk.Construct, id: string, props: AirflowProps = {}) {
     super(scope, id);
@@ -74,7 +72,6 @@ export class Airflow extends cdk.Construct {
     });
     this.databaseSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(5432), 'Database SG');
 
-
     //Create VPC Endpoints
     this._createVPCEndpoints(vpc);
 
@@ -90,7 +87,6 @@ export class Airflow extends cdk.Construct {
     this._getAirflowECSCluster(props, vpc, airflowBucket, airflowDBSecret, airflowDB, dbName, airflowRedis);
 
   }
-
 
   /**
    * Create a S3 bucket for airflow to synch the DAG.
@@ -152,7 +148,6 @@ export class Airflow extends cdk.Construct {
     airflowVPC.isolatedSubnets.forEach(subnet => {
       cdk.Tags.of(subnet).add('Name', `isolated-subnet-${subnet.availabilityZone}-airflow`);
     });
-
 
     return airflowVPC;
   }
@@ -406,72 +401,6 @@ export class Airflow extends cdk.Construct {
       interval: cdk.Duration.seconds(60),
       timeout: cdk.Duration.seconds(20),
     });
-
-    // //Create Task Definition
-    // const fernetKey = props.airflowFernetKey ?? 'gjDz-PXGnhitGbAGkiPziGCGWie9Q-ai3c56FUmNsuY='; //TODO: Update fernetKey
-    // const webserverTask = new ecs.FargateTaskDefinition(this, 'AriflowWebserverTask', {
-    //   executionRole,
-    //   taskRole,
-    //   cpu: 512,
-    //   memoryLimitMiB: 1024,
-    //   family: 'airflow-webserver',
-    // });
-    // webserverTask.addContainer('airflow-webserver-container', {
-    //   // image: ecs.AssetImage.fromDockerImageAsset(this._createECSSampleDockerImage()),
-    //   image: ecs.AssetImage.fromDockerImageAsset(this._createAirflowWebServiceDockerImage()),
-    //   logging: new ecs.AwsLogDriver({
-    //     streamPrefix: 'ecs',
-    //     logGroup: webserverLogGroup,
-    //   }),
-    //   environment: {
-    //     AIRFLOW_FERNET_KEY: fernetKey,
-    //     AIRFLOW_DATABASE_NAME: dbName,
-    //     AIRFLOW_DATABASE_PORT_NUMBER: '5432',
-    //     AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
-    //     AIRFLOW_EXECUTOR: 'CeleryExecutor',
-    //     AIRFLOW_WEBSERVER_HOST: 'webserver.airflow',
-    //     AIRFLOW_LOAD_EXAMPLES: 'no',
-    //     AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: '30',
-    //     REDIS_HOST: redis.attrRedisEndpointAddress,
-    //     BUCKET_NAME: bucket.bucketName,
-    //   },
-    //   secrets: {
-    //     AIRFLOW_DATABASE_USERNAME: ecs.Secret.fromSecretsManager(databaseSceret, 'username'),
-    //     AIRFLOW_DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(databaseSceret, 'password'),
-    //   },
-    //   portMappings: [{ containerPort: 8080 }], //Change to 8080
-    // });
-
-    // //Create AirflowWebServerService
-    // const airflowWebserverService = new ecs.FargateService(this, 'AirflowWebserverService', {
-    //   cluster: airflowCluster,
-    //   taskDefinition: webserverTask,
-    //   serviceName: 'AirflowWebserverServiceName',
-    //   securityGroups: [this.airflowECSServiceSG],
-    // });
-
-    // //Create Airflow ALB
-
-    // const alb = new elbv2.ApplicationLoadBalancer(this, 'LB', {
-    //   vpc,
-    //   internetFacing: true,
-    //   securityGroup: this.airflowAlbSG,
-    //   loadBalancerName: 'Airflow-Webserver-Loadbalancer',
-    // });
-    // const listener = alb.addListener('PublicListener', {
-    //   port: 80,
-    //   open: true,
-    // });
-    // listener.addTargets('Fargate', {
-    //   port: 80,
-    //   targets: [airflowWebserverService],
-    //   // healthCheck: {
-    //   //   enabled: true,
-    //   //   path: '/health',
-    //   //   interval: cdk.Duration.seconds(60),
-    //   //   timeout: cdk.Duration.seconds(5),
-    //   // },
-    // });
   }
 
   /**
