@@ -15,8 +15,7 @@ export class IntegTesting {
     });
 
     // const vpc = ec2.Vpc.fromLookup(stack, 'Vpc', { isDefault: true });
-    const airflowStack = new airflow.Airflow(stack, 'Airflow');
-    console.log(airflowStack);
+    new airflow.Airflow(stack, 'Airflow');
     this.stack = [stack];
   };
 }
