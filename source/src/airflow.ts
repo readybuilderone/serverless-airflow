@@ -24,7 +24,6 @@ export interface AirflowProps {
 
 export class Airflow extends cdk.Construct {
   private readonly airflowECSServiceSG: ec2.ISecurityGroup;
-  private readonly airflowAlbSG: ec2.ISecurityGroup;
   private readonly vpcendpointSG: ec2.ISecurityGroup;
   private readonly redisSG: ec2.ISecurityGroup;
   private readonly databaseSG: ec2.ISecurityGroup;
@@ -36,19 +35,11 @@ export class Airflow extends cdk.Construct {
     const vpc = this._getAirflowVPC(props);
 
     //Initial Security Group Property
-    this.airflowECSServiceSG = this._createSecurityGroup(vpc, 'airflow-ecsservice-sg');
-    this.airflowAlbSG = this._createSecurityGroup(vpc, 'airflow-alb-sg');
     this.vpcendpointSG = this._createSecurityGroup(vpc, 'vpcendpoint-sg');
+    this.airflowECSServiceSG = this._createSecurityGroup(vpc, 'airflow-ecsservice-sg');
     this.redisSG = this._createSecurityGroup(vpc, 'airflow-redis-sg');
     this.databaseSG = this._createSecurityGroup(vpc, 'airflow-database-sg');
-
-    this.airflowECSServiceSG.connections.allowFromAnyIpv4(ec2.Port.allTcp());
-    this.airflowECSServiceSG.connections.allowFrom(this.airflowAlbSG, ec2.Port.tcp(8080));
-    this.airflowECSServiceSG.connections.allowFrom(this.airflowAlbSG, ec2.Port.tcp(80));
-    this.vpcendpointSG.connections.allowFrom(ec2.Peer.ipv4('10.0.0.0/16'), ec2.Port.tcp(443), 'vpc endpoint security group');
-    this.vpcendpointSG.connections.allowFrom(ec2.Peer.anyIpv4(), ec2.Port.tcpRange(0, 65535), 'vpc endpoint sg 2');
-    this.redisSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(6379), 'Redis SG');
-    this.databaseSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(5432), 'Database SG');
+    this._configSecurityGroup();
 
     //Create VPC Endpoints
     this._createVPCEndpoints(vpc);
@@ -63,14 +54,29 @@ export class Airflow extends cdk.Construct {
 
     //Create AirflowCluster
     this._getAirflowECSCluster(props, vpc, airflowBucket, airflowDBSecret, airflowDB, dbName, airflowRedis);
-
   }
 
+  /**
+   * Create Security Group
+   * @param vpc 
+   * @param securityGroupName 
+   * @returns 
+   */
   private _createSecurityGroup(vpc: ec2.IVpc, securityGroupName: string): ec2.ISecurityGroup {
     return new ec2.SecurityGroup(this, securityGroupName, {
       vpc,
       securityGroupName,
     });
+  }
+
+  /**
+   * Setting rules for security groups
+   */
+  private _configSecurityGroup(){
+    this.airflowECSServiceSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(8080), 'Allow airflow scheduler/worker can connect to webserver');
+    this.vpcendpointSG.connections.allowFrom(ec2.Peer.ipv4('10.0.0.0/16'), ec2.Port.tcp(443), 'Allow ECS Cluster to access VPC Endpoints');
+    this.redisSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(6379), 'Allow ECS Cluster to access Redis');
+    this.databaseSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(5432), 'Allow ECS Cluster to access Database');
   }
 
   /**
@@ -264,9 +270,6 @@ export class Airflow extends cdk.Construct {
     //Create Roles
     const executionRole = this._createTaskExecutionRole();
     const taskRole = this._createTaskRole(bucket);
-
-    //Airflow ECS Service SG
-
 
     //Create Log Group
     const webserverLogGroup = this._createAirflowLogGroup('airflow-webserver-lg', '/ecs/airflow-webserver');
