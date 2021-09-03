@@ -67,5 +67,8 @@ AirFlow 默认用户名和密码为 user/bitnami, 登陆之后可以进行对应
 
 
 
+## 参考
 
+- AWS Blog: [将 Apache Airflow 部署到云端](https://aws.amazon.com/cn/blogs/china/deploy-apache-airflow-to-the-cloud/)
+- AWS Blog: [Setting up AWS PrivateLink for Amazon ECS, and Amazon ECR](https://aws.amazon.com/cn/blogs/compute/setting-up-aws-privatelink-for-amazon-ecs-and-amazon-ecr/)
 
