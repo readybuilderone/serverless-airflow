@@ -1,4 +1,7 @@
 # Serverless Airflow on AWS
+
+[![Build](https://github.com/readybuilderone/serverless-airflow/actions/workflows/build.yml/badge.svg)](https://github.com/readybuilderone/serverless-airflow/actions/workflows/build.yml)
+
 Apache Airflow 是一项由 Airbnb 在 2014 年 推出的开源项目，其目的是为了管理日益复杂的数据管理工具、脚本和分析工具，提供一个构建批处理工作流的方案。Airflow是一种可扩展的分布式工作流调度系统，允许将工作流建模为有向无环图（DAGs），通过这种方式简化数据管道中各个处理步骤的创建、编排和监控。
 
 在Airflow中，开发者可以用Python创建DAGs(有向无环图)，创建可相互连接和以来的任务集，从而实现自动化的工作流。Airflow被广泛应于于机器学习、数据分析/处理以及各类需要流程化的场景。
