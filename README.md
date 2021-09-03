@@ -9,18 +9,21 @@ Airflow由WebServer/Scheduler/Worker等组件构成，搭建和运维并不简�
 
 这里提出了一个基于Fargate将Airflow高可用部署在AWS的解决方案，并封装成了CDK的Construct，可以只使用数行代码部署一个Airflow集群。
 
-方案的开发使用了[Projen](https://github.com/projen/projen)框架，具体代码见[source](https://github.com/readybuilderone/serverless-airflow/tree/main/source)。
+方案实现代码见[source](https://github.com/readybuilderone/serverless-airflow/tree/main/source)。
 
-</br>
 
 ## 架构图
 
 ![architecture](assets/01-serverless-airflow-on-aws-architecture.svg)
 
 架构说明
-1. a
-2. b
-3. c
+1. 为保障安全，Fargate 部署在Isolated Subnet，通过VPC Endpoints访问 S3，ECS, ECR, CloudWatch, SecretsManager等服务；
+2. 方案中并没有使用NAT Gateway，如果需要进行系统诊断，可以使用ECS EXEC功能；
+3. 数据库账号密码使用Secrets Manager自动生成，确保安全；
+4. DAG文件存放到S3 Bucket，Airflow集群会自动进行加载；
+5. 方案使用了基于Bitnami的Airflow Docker Image，原因可查看: [Why use Bitnami Images?](https://github.com/bitnami/bitnami-docker-airflow);
+6. Fargate使用ECS 进行调度，使用ECS Service来保障高可用。 Airflow的WebServer， Scheduler， Worker 分为单独的Fargate进行部署，方便管理并可以按需利用ECS的Auto Scaling功能对Worker进行扩容；
+
 
 
 ## 部署指南
