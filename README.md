@@ -7,7 +7,7 @@ Airflow由WebServer/Scheduler/Worker等组件构成，搭建和运维并不简�
 
 费良宏老师曾经写过一篇[博客](https://aws.amazon.com/cn/blogs/china/deploy-apache-airflow-to-the-cloud/) 来简要介绍如何通过Pip在单机上安装Airflow，也曾经坦言：“在AWS部署Airflow并不是一件简单的事情，需要考虑到很多的细节，尤其是要设计好扩展策略，以及与AWS 服务的整合。”。
 
-这里提出了一个基于Fargate将Airflow高可用部署在AWS的解决方案，并封装成了CDK的Construct，可以只使用数行代码部署一个Airflow集群。
+本方案基于AWS-CDK，能够实现自动部署和配置Airflow集群，整套Airflow服务在部署完成之后会运行在AWS Fargate支撑的Amaozn ECS环境当中，并且自动配置相应的数据库集群与ALB负载均衡器，提供一整套高可用的Airflow服务。
 
 方案实现代码见[source](https://github.com/readybuilderone/serverless-airflow/tree/main/source)。
 
@@ -16,7 +16,7 @@ Airflow由WebServer/Scheduler/Worker等组件构成，搭建和运维并不简�
 
 ![architecture](assets/01-serverless-airflow-on-aws-architecture.svg)
 
-架构说明
+简要说明：
 1. 为保障安全，Fargate 部署在Isolated Subnet，通过VPC Endpoints访问 S3，ECS, ECR, CloudWatch, SecretsManager等服务；
 2. 方案中并没有使用NAT Gateway，如果需要进行系统诊断，可以使用ECS EXEC功能；
 3. 数据库账号密码使用Secrets Manager自动生成，确保安全；
@@ -25,16 +25,47 @@ Airflow由WebServer/Scheduler/Worker等组件构成，搭建和运维并不简�
 6. Fargate使用ECS 进行调度，使用ECS Service来保障高可用。 Airflow的WebServer， Scheduler， Worker 分为单独的Fargate进行部署，方便管理并可以按需利用ECS的Auto Scaling功能对Worker进行扩容；
 
 
-
 ## 部署指南
-### 说明
-pass
+Airflow 利用Fernet 进行加密, 在部署之前，可以 [生成 Fernet key]((参考[官方文档](https://airflow.apache.org/docs/apache-airflow/stable/security/secrets/fernet.html))，并设置 环境变量，方法可参考 [Airflow官方文档](https://airflow.apache.org/docs/apache-airflow/stable/security/secrets/fernet.html)。
 
-### 例子
-pass
+如果不设置环境变量，Airflow集群会自动生成Fernet key。
 
-### 常见问题
-pass
 
-### Licence
-pass
+
+创建Airflow集群的示例代码如下：
+
+``` typescript
+import * as cdk from '@aws-cdk/core';
+import * as airflow from '@cdk-serverless-airflow';
+
+const app = new cdk.App();
+const env = {
+  region: process.env.CDK_DEFAULT_REGION,
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+};
+const stack = new cdk.Stack(app, 'airflow-stack', {
+  env,
+});
+new airflow.Airflow(stack, 'Airflow');
+```
+
+
+
+Airflow集群创建完成之后，CDK会打印出对应的Bucket Name 和 Airflow登陆地址:
+
+![cdk-output](assets/02-airflow-cdk-output.jpg)
+
+
+
+在这里，Bucket Name 为 airflow-bucket-592032, 在bucket中创建 airflow_dags文件夹，将对应的DAG文件上传，之后在浏览器中登陆Airflow控制台，在这里，控制台的地址为: http://Airflow-Webserver-LB-1768293324.ap-southeast-1.elb.amazonaws.com。
+
+![airflow-login](assets/03-airflow-login.jpg)
+
+AirFlow 默认用户名和密码为 user/bitnami, 登陆之后可以进行对应的操作。
+
+![airflow-dashboard](assets/04-airflow-dashboard.jpg)
+
+
+
+
+
