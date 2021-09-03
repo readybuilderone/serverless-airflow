@@ -9,5 +9,4 @@ const env = {
 const stack = new cdk.Stack(app, 'airflow-stack', {
   env,
 });
-// const vpc = ec2.Vpc.fromLookup(stack, 'Vpc', { isDefault: true });
 new airflow.Airflow(stack, 'Airflow');
