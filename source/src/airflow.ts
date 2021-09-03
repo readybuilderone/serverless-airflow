@@ -2,15 +2,15 @@ import * as path from 'path';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as assets from '@aws-cdk/aws-ecr-assets';
 import * as ecs from '@aws-cdk/aws-ecs';
+import * as patterns from '@aws-cdk/aws-ecs-patterns';
 import * as elasticache from '@aws-cdk/aws-elasticache';
 import * as iam from '@aws-cdk/aws-iam';
 import * as logs from '@aws-cdk/aws-logs';
 import * as rds from '@aws-cdk/aws-rds';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as secretsmanager from '@aws-cdk/aws-secretsmanager';
-import * as cdk from '@aws-cdk/core';
-import * as patterns from '@aws-cdk/aws-ecs-patterns';
 import * as servicediscovery from '@aws-cdk/aws-servicediscovery';
+import * as cdk from '@aws-cdk/core';
 import { CfnOutput } from '@aws-cdk/core';
 
 export interface AirflowProps {
@@ -23,6 +23,7 @@ export interface AirflowProps {
 }
 
 export class Airflow extends cdk.Construct {
+  private readonly fernetKey: string;
   private readonly airflowECSServiceSG: ec2.ISecurityGroup;
   private readonly vpcendpointSG: ec2.ISecurityGroup;
   private readonly redisSG: ec2.ISecurityGroup;
@@ -30,6 +31,8 @@ export class Airflow extends cdk.Construct {
 
   constructor(scope: cdk.Construct, id: string, props: AirflowProps = {}) {
     super(scope, id);
+
+    this.fernetKey = process.env.AIRFLOW__CORE__FERNET_KEY?? '';
 
     const airflowBucket = this._getAirflowBucket(props);
     const vpc = this._getAirflowVPC(props);
@@ -58,9 +61,9 @@ export class Airflow extends cdk.Construct {
 
   /**
    * Create Security Group
-   * @param vpc 
-   * @param securityGroupName 
-   * @returns 
+   * @param vpc
+   * @param securityGroupName
+   * @returns
    */
   private _createSecurityGroup(vpc: ec2.IVpc, securityGroupName: string): ec2.ISecurityGroup {
     return new ec2.SecurityGroup(this, securityGroupName, {
@@ -72,7 +75,7 @@ export class Airflow extends cdk.Construct {
   /**
    * Setting rules for security groups
    */
-  private _configSecurityGroup(){
+  private _configSecurityGroup() {
     this.airflowECSServiceSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(8080), 'Allow airflow scheduler/worker can connect to webserver');
     this.vpcendpointSG.connections.allowFrom(ec2.Peer.ipv4('10.0.0.0/16'), ec2.Port.tcp(443), 'Allow ECS Cluster to access VPC Endpoints');
     this.redisSG.connections.allowFrom(this.airflowECSServiceSG, ec2.Port.tcp(6379), 'Allow ECS Cluster to access Redis');
@@ -101,8 +104,8 @@ export class Airflow extends cdk.Construct {
     new CfnOutput(this, 'airflow-bucket', {
       value: airflowBucket.bucketName,
       exportName: 'AirflowBucket',
-      description: 'Buckent Name'
-    })
+      description: 'Buckent Name',
+    });
     return airflowBucket;
   }
 
@@ -280,12 +283,11 @@ export class Airflow extends cdk.Construct {
     workerLogGroup.grantWrite(taskRole);
 
     //Create Airflow ECS Service
-    const fernetKey = props.airflowFernetKey ?? 'gjDz-PXGnhitGbAGkiPziGCGWie9Q-ai3c56FUmNsuY='; //TODO: Update fernetKey
-    this._createAirflowWebserverService(fernetKey, executionRole, taskRole, bucket, databaseSceret, database,
+    this._createAirflowWebserverService(executionRole, taskRole, bucket, databaseSceret, database,
       dbName, airflowCluster, webserverLogGroup);
-    this._createAirflowSchedulerService(fernetKey, executionRole, taskRole, schedulerLogGroup, bucket, databaseSceret, database,
+    this._createAirflowSchedulerService(executionRole, taskRole, schedulerLogGroup, bucket, databaseSceret, database,
       dbName, redis, airflowCluster);
-    this._createAirflowWorkerService(fernetKey, executionRole, taskRole, workerLogGroup, bucket, databaseSceret, database,
+    this._createAirflowWorkerService(executionRole, taskRole, workerLogGroup, bucket, databaseSceret, database,
       dbName, redis, airflowCluster);
 
     return airflowCluster;
@@ -341,7 +343,7 @@ export class Airflow extends cdk.Construct {
   /**
    * Create Airflow Webserver ECS Service
    */
-  private _createAirflowWebserverService(fernetKey: string, executionRole: iam.IRole, taskRole: iam.IRole, 
+  private _createAirflowWebserverService(executionRole: iam.IRole, taskRole: iam.IRole,
     bucket: s3.IBucket, databaseSceret: secretsmanager.Secret, database: rds.IDatabaseInstance, dbName: string,
     airflowCluster: ecs.ICluster, webserverLogGroup: logs.ILogGroup) {
 
@@ -355,7 +357,7 @@ export class Airflow extends cdk.Construct {
         executionRole,
         family: 'airflow-webserver-pattners',
         environment: {
-          AIRFLOW_FERNET_KEY: fernetKey,
+          AIRFLOW_FERNET_KEY: this.fernetKey,
           AIRFLOW_DATABASE_NAME: dbName,
           AIRFLOW_DATABASE_PORT_NUMBER: '5432',
           AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
@@ -376,7 +378,7 @@ export class Airflow extends cdk.Construct {
       },
       securityGroups: [this.airflowECSServiceSG],
       serviceName: 'AirflowWebserverServiceName',
-      desiredCount:1,
+      desiredCount: 1,
       loadBalancerName: 'Airflow-Webserver-LB',
       cloudMapOptions: {
         name: 'webserver',
@@ -385,8 +387,8 @@ export class Airflow extends cdk.Construct {
         cloudMapNamespace: new servicediscovery.PrivateDnsNamespace(this, 'webserver-dns-namespace', {
           name: 'airflow',
           vpc: airflowCluster.vpc,
-        })
-      }
+        }),
+      },
     });
 
     loadBalancedFargateService.targetGroup.configureHealthCheck({
@@ -399,7 +401,7 @@ export class Airflow extends cdk.Construct {
   /**
    * Create Airflow Scheduler ECS Service
    */
-  private _createAirflowSchedulerService(fernetKey: string, executionRole: iam.IRole, taskRole: iam.IRole, schedulerLogGroup: logs.ILogGroup,
+  private _createAirflowSchedulerService(executionRole: iam.IRole, taskRole: iam.IRole, schedulerLogGroup: logs.ILogGroup,
     bucket: s3.IBucket, databaseSceret: secretsmanager.Secret, database: rds.IDatabaseInstance, dbName: string, redis: elasticache.CfnCacheCluster,
     airflowCluster: ecs.ICluster) {
     //Create Task Definition
@@ -417,7 +419,7 @@ export class Airflow extends cdk.Construct {
         logGroup: schedulerLogGroup,
       }),
       environment: {
-        AIRFLOW_FERNET_KEY: fernetKey,
+        AIRFLOW_FERNET_KEY: this.fernetKey,
         AIRFLOW_DATABASE_NAME: dbName,
         AIRFLOW_DATABASE_PORT_NUMBER: '5432',
         AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
@@ -446,7 +448,7 @@ export class Airflow extends cdk.Construct {
   /**
    *  Create Airflow Worker ECS Service
    */
-  private _createAirflowWorkerService(fernetKey: string, executionRole: iam.IRole, taskRole: iam.IRole, workerLogGroup: logs.ILogGroup,
+  private _createAirflowWorkerService(executionRole: iam.IRole, taskRole: iam.IRole, workerLogGroup: logs.ILogGroup,
     bucket: s3.IBucket, databaseSceret: secretsmanager.Secret, database: rds.IDatabaseInstance, dbName: string, redis: elasticache.CfnCacheCluster,
     airflowCluster: ecs.ICluster) {
     //Create Task Definition
@@ -464,7 +466,7 @@ export class Airflow extends cdk.Construct {
         logGroup: workerLogGroup,
       }),
       environment: {
-        AIRFLOW_FERNET_KEY: fernetKey,
+        AIRFLOW_FERNET_KEY: this.fernetKey,
         AIRFLOW_DATABASE_NAME: dbName,
         AIRFLOW_DATABASE_PORT_NUMBER: '5432',
         AIRFLOW_DATABASE_HOST: database.dbInstanceEndpointAddress,
