@@ -6,6 +6,9 @@ on:
     branches:
       - main
   workflow_dispatch: {}
+defaults:
+  run:
+    working-directory: source
 jobs:
   release:
     runs-on: ubuntu-latest

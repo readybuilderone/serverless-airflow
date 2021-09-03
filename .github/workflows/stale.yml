@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: 0 1 * * *
   workflow_dispatch: {}
+defaults:
+  run:
+    working-directory: source
 jobs:
   stale:
     runs-on: ubuntu-latest
