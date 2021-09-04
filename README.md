@@ -33,26 +33,17 @@ Airflow 利用Fernet 进行加密, 在部署之前，可以 [生成 Fernet key](
 
 如果不设置环境变量，Airflow集群会自动生成Fernet key。
 
+使用CDK，需要安装nodejs, 安装办法可参看[官方文档](https://nodejs.org/en/download/package-manager/)。
 
+在命令行中运行如下命令创建集群
 
-创建Airflow集群的示例代码如下：
-
-``` typescript
-import * as cdk from '@aws-cdk/core';
-import * as airflow from '@cdk-serverless-airflow';
-
-const app = new cdk.App();
-const env = {
-  region: process.env.CDK_DEFAULT_REGION,
-  account: process.env.CDK_DEFAULT_ACCOUNT,
-};
-const stack = new cdk.Stack(app, 'airflow-stack', {
-  env,
-});
-new airflow.Airflow(stack, 'Airflow');
+``` shell
+git clone https://github.com/readybuilderone/serverless-airflow.git
+cd serverless-airflow/source
+npx projen
+npx projen compile
+npx cdk --app ./lib/integ.airflow.js deploy 
 ```
-
-
 
 Airflow集群创建完成之后，CDK会打印出对应的Bucket Name 和 Airflow登陆地址:
 
