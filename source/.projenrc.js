@@ -31,6 +31,11 @@ const project = new AwsCdkConstructLibrary({
     '@aws-cdk/aws-ecs-patterns',
     '@aws-cdk/aws-servicediscovery',
   ],
+
+  publishToPypi: {
+    distName: 'cdk-serverless-airflow',
+    module: 'cdk_serverless_airflow',
+  },
 });
 
 const common_exclude = ['cdk.out', 'cdk.context.json', 'images', 'yarn-error.log'];

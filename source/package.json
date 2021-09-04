@@ -23,6 +23,7 @@
     "eslint": "npx projen eslint",
     "compat": "npx projen compat",
     "publish:npm": "npx projen publish:npm",
+    "publish:pypi": "npx projen publish:pypi",
     "docgen": "npx projen docgen",
     "release": "npx projen release",
     "projen": "npx projen"
@@ -138,7 +139,12 @@
   "stability": "stable",
   "jsii": {
     "outdir": "dist",
-    "targets": {},
+    "targets": {
+      "python": {
+        "distName": "cdk-serverless-airflow",
+        "module": "cdk_serverless_airflow"
+      }
+    },
     "tsc": {
       "outDir": "lib",
       "rootDir": "src"
