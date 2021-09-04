@@ -5,8 +5,7 @@
 
 ## Architecture
 
-![architecture](../
-/01-serverless-airflow-on-aws-architecture.svg)
+![architecture](../assets/01-serverless-airflow-on-aws-architecture.svg)
 
 ## Sample Code
 ``` typescript
