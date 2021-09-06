@@ -91,6 +91,10 @@
   },
   "bundledDependencies": [],
   "keywords": [
+    "airflow",
+    "apache airflow",
+    "aws",
+    "aws-cdk",
     "cdk"
   ],
   "main": "lib/index.js",
