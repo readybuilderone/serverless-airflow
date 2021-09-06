@@ -74,7 +74,7 @@ Object {
     "AirflowAirflowBucketFED34676": Object {
       "DeletionPolicy": "Delete",
       "Properties": Object {
-        "BucketName": "airflow-bucket-601790",
+        "BucketName": "airflow-bucket-734682",
         "PublicAccessBlockConfiguration": Object {
           "BlockPublicAcls": true,
           "BlockPublicPolicy": true,
