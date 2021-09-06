@@ -4,7 +4,7 @@ const project = new AwsCdkConstructLibrary({
   authorAddress: 'neohan2016@outlook.com',
   cdkVersion: '1.95.2',
   defaultReleaseBranch: 'main',
-  name: 'source',
+  name: 'cdk-serverless-airflow',
   repositoryUrl: 'https://github.com/readybuilderone/serverless-airflow.git',
 
   // cdkDependencies: undefined,        /* Which AWS CDK modules (those that start with "@aws-cdk/") does this library require when consumed? */
