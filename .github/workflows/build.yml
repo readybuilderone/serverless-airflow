@@ -4,9 +4,6 @@ name: build
 on:
   pull_request: {}
   workflow_dispatch: {}
-defaults:
-  run:
-    working-directory: source
 jobs:
   build:
     runs-on: ubuntu-latest
