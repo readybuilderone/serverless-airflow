@@ -26,3 +26,5 @@ cdk.out
 cdk.context.json
 images
 yarn-error.log
+.DS_Store
+test/__snapshots__/integ.snapshot.test.ts.snap

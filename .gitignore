@@ -53,5 +53,6 @@ cdk.out
 cdk.context.json
 images
 yarn-error.log
-!/.github/workflows/release.yml
+.DS_Store
 test/__snapshots__/integ.snapshot.test.ts.snap
+!/.github/workflows/release.yml

@@ -38,7 +38,7 @@ const project = new AwsCdkConstructLibrary({
   },
 });
 
-const common_exclude = ['cdk.out', 'cdk.context.json', 'images', 'yarn-error.log'];
+const common_exclude = ['cdk.out', 'cdk.context.json', 'images', 'yarn-error.log', '.DS_Store', 'test/__snapshots__/integ.snapshot.test.ts.snap'];
 project.npmignore.exclude(...common_exclude);
 project.gitignore.exclude(...common_exclude);
 
