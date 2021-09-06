@@ -54,5 +54,3 @@ cdk.context.json
 images
 yarn-error.log
 !/.github/workflows/release.yml
-*__snapshots__*
-test/__snapshots__/integ.snapshot.test.ts.snap
