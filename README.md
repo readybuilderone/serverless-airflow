@@ -17,7 +17,7 @@ Airflow由WebServer/Scheduler/Worker等组件构成，搭建和运维并不简�
 
 ## 架构图
 
-![architecture](assets/01-serverless-airflow-on-aws-architecture.svg)
+![architecture](assets/01-serverless-airflow-on-aws-architecture.jpg)
 
 简要说明：
 1. 为保障安全，Fargate 部署在Isolated Subnet，通过VPC Endpoints访问 S3，ECS, ECR, CloudWatch, SecretsManager等服务；
