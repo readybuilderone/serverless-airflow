@@ -5,7 +5,7 @@
 
 ## Architecture
 
-![architecture](assets/01-serverless-airflow-on-aws-architecture.svg)
+![architecture](../assets/01-serverless-airflow-on-aws-architecture.svg)
 
 ## Sample Code
 ``` typescript
@@ -23,5 +23,5 @@ const stack = new cdk.Stack(app, 'airflow-stack', {
 new airflow.Airflow(stack, 'Airflow');
 ```
 ## Airflow Dashboard 
-![airflow-dashboard](assets/04-airflow-dashboard.jpg)
+![airflow-dashboard](../assets/04-airflow-dashboard.jpg)
 
