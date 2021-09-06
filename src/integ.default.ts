@@ -1,5 +1,5 @@
 import * as cdk from '@aws-cdk/core';
-import * as airflow from './airflow';
+import * as airflow from '.';
 
 export class IntegTesting {
   readonly stack: cdk.Stack[];
