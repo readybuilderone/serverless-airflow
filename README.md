@@ -12,7 +12,7 @@ CDK construct library that allows you to create [Apache Airflow](https://airflow
 # Sample
 ``` typescript
 import * as cdk from '@aws-cdk/core';
-import * as airflow from '@cdk-serverless-airflow';
+import * as airflow from 'cdk-serverless-airflow';
 
 const app = new cdk.App();
 const env = {
