@@ -1,6 +1,7 @@
 [![Build](https://github.com/readybuilderone/serverless-airflow/actions/workflows/build.yml/badge.svg)](https://github.com/readybuilderone/serverless-airflow/actions/workflows/build.yml)
 [![NPM version](https://badge.fury.io/js/cdk-serverless-airflow.svg)](https://badge.fury.io/js/cdk-serverless-airflow)
 [![PyPI version](https://badge.fury.io/py/cdk-serverless-airflow.svg)](https://badge.fury.io/py/cdk-serverless-airflow)
+[![construct hub](https://img.shields.io/badge/Construct%20Hub-available-blue)](https://constructs.dev/packages/cdk-serverless-airflow)
 
 
 # `CDK Serverless Airflow`
