@@ -175,11 +175,11 @@ export class Airflow extends cdk.Construct {
       privateDnsEnabled: true,
       securityGroups: [this.vpcendpointSG],
     });
-    vpc.addInterfaceEndpoint('ecs-endpoint', {
-      service: ec2.InterfaceVpcEndpointAwsService.ECS,
-      privateDnsEnabled: true,
-      securityGroups: [this.vpcendpointSG],
-    });
+    // vpc.addInterfaceEndpoint('ecs-endpoint', {
+    //   service: ec2.InterfaceVpcEndpointAwsService.ECS,
+    //   privateDnsEnabled: true,
+    //   securityGroups: [this.vpcendpointSG],
+    // });
     vpc.addInterfaceEndpoint('cloudwatchlogs-endpoint', {
       service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
       privateDnsEnabled: true,
@@ -310,7 +310,7 @@ export class Airflow extends cdk.Construct {
     });
 
     executionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'));
-    executionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'));
+    // executionRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'));
     return executionRole;
   }
 
@@ -318,7 +318,7 @@ export class Airflow extends cdk.Construct {
     const taskRole = new iam.Role(this, 'AirflowTaskRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
     });
-    taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'));
+    // taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AdministratorAccess'));
     //S3 Policy
     taskRole.addToPolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
