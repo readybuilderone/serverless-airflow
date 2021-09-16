@@ -4,4 +4,4 @@
 sh ./sync_dags.sh &
 
 # Run base image entrypoint
-exec /app-entrypoint.sh "$@"
+exec /opt/bitnami/scripts/airflow/entrypoint.sh "$@"
